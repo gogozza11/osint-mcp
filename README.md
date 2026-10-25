@@ -8,6 +8,29 @@
 
 Most tools work without an API key. Optional keys add coverage from services such as HIBP, VirusTotal, and OTX. Browser tools use Playwright; the rest can run without a browser.
 
+## Easy install with your AI agent
+
+Open your coding agent in the environment where you want to use the MCP server. Give it the [OSINT MCP repository](https://github.com/n5za/osint-mcp) and paste this prompt:
+
+```text
+Install and configure this MCP server for the agent/client I am using right now:
+https://github.com/n5za/osint-mcp
+
+Read the repository README first. Clone the repository to a suitable local directory,
+create a Python 3.10+ virtual environment, and install the project in that environment.
+Find this client's MCP configuration and add OSINT MCP as a stdio server named "osint".
+Use absolute paths to the virtual environment's Python executable and the repository's
+server.py. Preserve my existing MCP servers and settings.
+
+Install Playwright Chromium for the browser and deep-research tools. Verify that the
+server starts, that the client can discover its tools, and that the expected tool
+count is 80. If this client needs a restart or reload, tell me exactly what to do.
+Do not put API keys in the repository or in the MCP configuration. Report the install
+path, the config file you changed, and the verification result.
+```
+
+Your agent needs local shell and file access to do the installation. The steps below are the manual alternative.
+
 ## Start here
 
 **Requirements:** Python 3.10 or newer. Chromium is needed only for browser and deep research tools; Tesseract is optional for OCR.
