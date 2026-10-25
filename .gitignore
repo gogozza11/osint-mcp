@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.env
+
+# Runtime output
+shots/
+*.png
+!docs/*.png
+
+# Local secrets — never commit these
+keys.json
+.env.local
+*.pem
+*.key
+
+# Tooling
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.DS_Store

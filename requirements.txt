@@ -1,0 +1,16 @@
+# Core MCP runtime
+mcp>=1.2.0
+
+# HTTP / parsing
+httpx>=0.27.0
+dnspython>=2.4.0
+beautifulsoup4>=4.12.0
+cryptography>=42.0.0
+
+# Real-browser tools + screenshots
+playwright>=1.40.0
+
+# Image analysis (EXIF, hashing, OCR preprocessing, QR)
+pillow>=10.0.0
+numpy>=1.26.0
+opencv-python>=4.9.0
