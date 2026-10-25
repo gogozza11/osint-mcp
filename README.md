@@ -250,8 +250,6 @@ osint_mcp/
 └── util_tools.py       # local utilities
 ```
 
-Run the offline checks with `python -m unittest discover -s tests -v`.
-
 ## Responsible use
 
 Use this project only for your own assets, authorized engagements, bug bounty scopes, or labs. Breach tools return aggregate metadata and do not expose passwords, hashes, cookies, or raw leaked records. Confirm findings with primary evidence before reporting them.
