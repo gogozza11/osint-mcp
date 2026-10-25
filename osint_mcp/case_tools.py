@@ -79,6 +79,27 @@ def _db():
                 created_at TEXT NOT NULL,
                 UNIQUE(case_id, subject_id, predicate, object_id, source_id, evidence)
             );
+            CREATE TABLE IF NOT EXISTS images (
+                id INTEGER PRIMARY KEY, case_id TEXT NOT NULL REFERENCES cases(id),
+                sha256 TEXT NOT NULL, dhash TEXT NOT NULL, path TEXT NOT NULL,
+                original_url TEXT, source_id INTEGER REFERENCES sources(id),
+                analysis_json TEXT NOT NULL, created_at TEXT NOT NULL,
+                UNIQUE(case_id, sha256)
+            );
+            CREATE TABLE IF NOT EXISTS image_people (
+                case_id TEXT NOT NULL REFERENCES cases(id),
+                image_id INTEGER NOT NULL REFERENCES images(id),
+                entity_id INTEGER NOT NULL REFERENCES entities(id),
+                PRIMARY KEY(case_id, image_id, entity_id)
+            );
+            CREATE TABLE IF NOT EXISTS image_hits (
+                case_id TEXT NOT NULL REFERENCES cases(id),
+                image_id INTEGER NOT NULL REFERENCES images(id),
+                source_id INTEGER NOT NULL REFERENCES sources(id),
+                provider TEXT NOT NULL, score REAL,
+                match_image_url TEXT,
+                PRIMARY KEY(case_id, image_id, source_id, provider)
+            );
             CREATE INDEX IF NOT EXISTS idx_entities_case_name ON entities(case_id, name);
             CREATE INDEX IF NOT EXISTS idx_facts_case_subject ON facts(case_id, subject_id);
             CREATE INDEX IF NOT EXISTS idx_facts_case_object ON facts(case_id, object_id);
@@ -392,6 +413,41 @@ async def case_graph(case: str, entity: str = "", limit: int = 100) -> dict:
             nodes[source_node] = {"id": source_node, "type": "source",
                                   "url": mention["source_url"], "title": mention["title"]}
             edges.append({"from": entity_node, "to": source_node, "type": "mention"})
+        image_filter = (" AND p.name=? COLLATE NOCASE" if entity.strip() else "")
+        image_rows = db.execute("""SELECT i.id, i.sha256, i.path, i.source_id,
+            src.url AS source_url, p.id AS person_id, p.name AS person_name FROM images i
+            LEFT JOIN image_people ip ON ip.image_id=i.id AND ip.case_id=i.case_id
+            LEFT JOIN entities p ON p.id=ip.entity_id
+            LEFT JOIN sources src ON src.id=i.source_id WHERE i.case_id=?""" + image_filter +
+            " ORDER BY i.id DESC LIMIT ?",
+            (case_id, entity.strip(), limit) if entity.strip() else (case_id, limit)).fetchall()
+        for item in image_rows:
+            image_node = f"image:{item['id']}"
+            nodes[image_node] = {"id": image_node, "type": "image",
+                                 "sha256": item["sha256"], "path": item["path"]}
+            if item["person_id"]:
+                person_node = f"entity:{item['person_id']}"
+                nodes[person_node] = {"id": person_node, "type": "entity",
+                                      "name": item["person_name"], "kind": "person"}
+                edges.append({"from": person_node, "to": image_node,
+                              "type": "image_reference", "status": "association_only"})
+            if item["source_id"]:
+                source_node = f"source:{item['source_id']}"
+                nodes[source_node] = {"id": source_node, "type": "source", "url": item["source_url"]}
+                edges.append({"from": image_node, "to": source_node, "type": "image_source"})
+        image_ids = [item["id"] for item in image_rows]
+        if image_ids:
+            placeholders = ",".join("?" for _ in image_ids)
+            hits = db.execute("""SELECT h.image_id, h.provider, h.score,
+                s.id AS source_id, s.url FROM image_hits h
+                JOIN sources s ON s.id=h.source_id WHERE h.case_id=? AND h.image_id IN (""" +
+                placeholders + ") ORDER BY h.image_id LIMIT ?", (case_id, *image_ids, limit)).fetchall()
+            for hit in hits:
+                source_node = f"source:{hit['source_id']}"
+                nodes[source_node] = {"id": source_node, "type": "source", "url": hit["url"]}
+                edges.append({"from": f"image:{hit['image_id']}", "to": source_node,
+                              "type": "image_seen_on", "provider": hit["provider"],
+                              "score": hit["score"]})
         return {"ok": True, "case": _row(case_row), "facts": [_row(r) for r in facts],
                 "mentions": [_row(r) for r in mentions], "observations": [_row(r) for r in observations],
                 "nodes": list(nodes.values()), "edges": edges,

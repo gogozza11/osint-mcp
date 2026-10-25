@@ -745,7 +745,7 @@ def _extract_exif(image: Image.Image) -> tuple[dict, dict | None]:
 
 def _dhash(image: Image.Image) -> str:
     gray = image.convert("L").resize((9, 8), Image.Resampling.LANCZOS)
-    pixels = list(gray.getdata())
+    pixels = list(gray.get_flattened_data() if hasattr(gray, "get_flattened_data") else gray.getdata())
     bits = 0
     for row in range(8):
         for col in range(8):
@@ -755,7 +755,7 @@ def _dhash(image: Image.Image) -> str:
 
 def _ahash(image: Image.Image) -> str:
     gray = image.convert("L").resize((8, 8), Image.Resampling.LANCZOS)
-    pixels = list(gray.getdata())
+    pixels = list(gray.get_flattened_data() if hasattr(gray, "get_flattened_data") else gray.getdata())
     average = sum(pixels) / len(pixels)
     bits = 0
     for pixel in pixels:
