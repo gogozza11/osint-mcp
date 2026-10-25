@@ -10,6 +10,7 @@ from . import (
     composite,
     deep_tools,
     discovery_tools,
+    dns_audit_tools,
     dns_tools,
     domain_tools,
     identity_tools,
@@ -29,6 +30,7 @@ with recon_domain / recon_ip for a one-shot overview.
 Workflow hints:
 - Domain: recon_domain -> recon_deep for archives/API/email/threat in one shot
 - Domain drill-down: dns_lookup -> domain_whois -> ssl_certificate -> passive_subdomains / subdomain_enum
+- DNS posture: dnssec_status -> dns_resolver_compare when answers differ across clients
 - IP: recon_ip -> ip_intel -> asn_lookup -> port_scan (only with authorization)
 - Web app: http_headers_audit -> tech_fingerprint -> robots_txt / sitemap_urls -> wayback_urls / commoncrawl_urls -> js_recon
 - API / hidden surface: api_discovery -> well_known -> js_recon -> urlscan_search
@@ -57,6 +59,8 @@ TOOLS = [
     composite.recon_deep,
     # DNS / infrastructure
     dns_tools.dns_lookup,
+    dns_audit_tools.dnssec_status,
+    dns_audit_tools.dns_resolver_compare,
     dns_tools.reverse_dns,
     dns_tools.crtsh_subdomains,
     dns_tools.subdomain_enum,

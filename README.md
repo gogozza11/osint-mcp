@@ -1,10 +1,10 @@
 # OSINT Recon MCP
 
-**70 OSINT & reconnaissance tools for any MCP client** — DNS, WHOIS, TLS, IP intelligence, subdomain discovery, breach metadata, threat intel, JavaScript recon, and a real headless browser for deep research.
+**72 OSINT & reconnaissance tools for any MCP client** — DNS, WHOIS, TLS, IP intelligence, subdomain discovery, breach metadata, threat intel, JavaScript recon, and a real headless browser for deep research.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![MCP](https://img.shields.io/badge/MCP-1.x-6f42c1)
-![Tools](https://img.shields.io/badge/tools-70-brightgreen)
+![Tools](https://img.shields.io/badge/tools-72-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 The model picks the narrowest tool it needs from the tool descriptions; every tool returns
@@ -166,7 +166,7 @@ Restart OpenCode, or reload the session. MCP servers are spawned at session star
 opencode mcp list
 ```
 
-You should see `osint` with 70 tools. Inside a session, ask the model to call
+You should see `osint` with 72 tools. Inside a session, ask the model to call
 `recon_domain` for a domain you are authorized to test — the tool names appear in the
 model's tool list, prefixed by the server name (`osint_recon_domain`, etc., depending on client).
 
@@ -295,10 +295,14 @@ Transport: `stdio`. No ports, no daemon, no network listener.
 | Tool | What it returns |
 |---|---|
 | `dns_lookup(domain, record_type="A")` | A/AAAA/MX/NS/TXT/CNAME/SOA/CAA/SRV/ANY, structured |
+| `dnssec_status(domain)` | DS and DNSKEY publication; signed, unsigned, or incomplete. Does not validate signatures. |
+| `dns_resolver_compare(domain, record_type="A")` | Compare Cloudflare and Google DNS-over-HTTPS answers for A/AAAA/MX/NS/TXT/CAA/CNAME. |
 | `reverse_dns(ip)` | PTR records |
 | `crtsh_subdomains(domain, limit=200)` | Passive subdomains from certificate transparency (crt.sh, Cert Spotter fallback) |
 | `subdomain_enum(domain, wordlist=None, concurrency=50)` | Active brute force with a built-in ~320-word list, wildcard detection |
 | `dns_zone_transfer(domain)` | AXFR attempt against every authoritative nameserver |
+
+`dnssec_status` checks whether DS and DNSKEY records are published; it does not verify cryptographic signatures. `dns_resolver_compare` reports the public resolvers' answers at query time. Different answers can be expected for geo DNS, load balancing, or resolver policies.
 
 ### Domain / TLS / historical web
 
@@ -526,6 +530,7 @@ osint-mcp/
 │   ├── common.py           # HTTP client, cache, key store, shared helpers
 │   ├── composite.py        # recon_domain / recon_ip / recon_deep
 │   ├── dns_tools.py        # DNS, CT, brute force, AXFR
+│   ├── dns_audit_tools.py  # DNSSEC publication and resolver comparison
 │   ├── domain_tools.py     # RDAP, TLS, robots, security.txt, sitemaps, Wayback
 │   ├── ip_tools.py         # IP intel, ASN, reverse IP, port scan
 │   ├── web_tools.py        # HTTP fetch, header audit, fingerprint, links, metadata
@@ -547,7 +552,7 @@ osint-mcp/
 
 ## How it works
 
-- **FastMCP over stdio.** `server.py` builds the app, registers 70 tools, and speaks JSON-RPC on
+- **FastMCP over stdio.** `server.py` builds the app, registers 72 tools, and speaks JSON-RPC on
   stdin/stdout. No HTTP listener, no persistence, no background daemon.
 - **Bounded concurrency.** Composite tools fan out with `asyncio.gather`; every network call has a
   timeout and a cache entry (5 min default) to stay friendly to upstream APIs.
