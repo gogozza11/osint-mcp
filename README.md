@@ -2,9 +2,9 @@
 
 ![A large black and white eye, the OSINT MCP project banner](docs/eye-banner.png)
 
-**72 tools for open-source intelligence and authorized reconnaissance, exposed through the Model Context Protocol (MCP).** Investigate domains, IPs, websites, public accounts, breach metadata, threat feeds, and images from one stdio server.
+**80 tools for open-source intelligence and authorized reconnaissance, exposed through the Model Context Protocol (MCP).** Investigate domains, IPs, websites, public accounts, breach metadata, threat feeds, and images from one stdio server. Keep a private evidence graph for investigations you revisit.
 
-![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-111111?logo=python&logoColor=white) ![72 tools](https://img.shields.io/badge/Tools-72-111111) ![License MIT](https://img.shields.io/badge/License-MIT-111111)
+![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-111111?logo=python&logoColor=white) ![80 tools](https://img.shields.io/badge/Tools-80-111111) ![License MIT](https://img.shields.io/badge/License-MIT-111111)
 
 Most tools work without an API key. Optional keys add coverage from services such as HIBP, VirusTotal, and OTX. Browser tools use Playwright; the rest can run without a browser.
 
@@ -110,7 +110,7 @@ print(len(asyncio.run(mcp.list_tools())))
 PY
 ```
 
-Expected output: `72`. To try a keyless tool without an MCP client:
+Expected output: `80`. To try a keyless tool without an MCP client:
 
 ```bash
 python - <<'PY'
@@ -131,8 +131,28 @@ PY
 | Threat triage | `threat_reputation` | `virustotal_report`, `otx_domain`, `cve_intel` |
 | Rendered or dynamic page | `browser_open` | `browser_extract`, `browser_screenshot` |
 | Multi-source research | `deep_osint` | `source_crosscheck`, `image_analyze` |
+| Ongoing investigation | `case_create` | `case_research`, `case_graph`, `case_add_fact` |
 
 `recon_ip` includes a TCP port check. Other tools that actively contact target systems include `port_scan`, `subdomain_enum`, `api_discovery`, `dns_zone_transfer`, and browser tools. Use them only on targets you are authorized to assess.
+
+## Persistent investigation graph
+
+The case tools let you keep a separate local knowledge graph for each investigation. A case has sources, entities, short observations, and explicit relationships. `case_research` runs browser research and **automatically saves** source URLs, detected entity mentions, and key sentences. `case_capture` saves the same fields from an existing `deep_osint` or `browser_crawl` JSON result. Repeated captures deduplicate mentions and observations. Other OSINT tools do not save data automatically; pass their useful findings to `case_note` or `case_add_fact`.
+
+| Tool | Use it for |
+|---|---|
+| `case_create(name, description)` | Start or reopen a case. |
+| `case_list()` | See saved cases and their counts. |
+| `case_research(case, query, max_pages)` | Research and save source/entity mentions in one call. |
+| `case_capture(case, result_json)` | Import the `pages` from a prior research result. |
+| `case_note(case, entity, kind, observation, source_url)` | Save a person, place, event, or organization with a short observation. |
+| `case_add_fact(case, subject, predicate, object_name, ...)` | Add a relationship, ideally with `source_url` and an evidence excerpt. |
+| `case_search(case, query)` | Find entities, source titles/URLs, observations, and facts. |
+| `case_graph(case, entity)` | Resume the whole case or inspect one entity's connections. |
+
+For example: create a case named `Missing painting`; run `case_research` for the incident; save a note about Amina, then add the relationship `Amina — visited — Rabat` with the page URL and supporting excerpt; later use `case_graph("Missing painting", "Amina")` to resume. Its `nodes` and `edges` fields are ready for a graph viewer. A page mentioning Amina and Rabat stores two mentions, **not** an invented visit. Facts without both a source and evidence stay marked `lead`; even sourced facts are claims to verify, not ground truth. This is especially important for questions about who acted and why.
+
+The database defaults to `~/.local/share/osint-mcp/cases.sqlite3`. It is local, is not sent to GitHub, and is ignored if placed in the repository. The tool creates the database file with private permissions on POSIX systems. Set `OSINT_CASES_DB` to choose another path. Back up that file if you need to preserve a long-running case. Case storage contains source URLs and brief excerpts, so protect the file like other investigation notes.
 
 ## Tool catalog
 
@@ -148,6 +168,15 @@ The names below are the registered MCP tool names. Arguments and result schemas 
 | `dns_resolver_compare` | Compare Cloudflare and Google DNS-over-HTTPS answers. Differences can be normal for geo DNS or load balancing. |
 | `crtsh_subdomains`, `passive_subdomains` | Find names from public certificate and passive sources. |
 | `subdomain_enum`, `dns_zone_transfer` | Active subdomain guessing and AXFR checks. |
+
+### Case memory
+
+| Tools | Purpose |
+|---|---|
+| `case_create`, `case_list` | Start and resume separate local investigations. |
+| `case_research`, `case_capture` | Save sources, entity mentions, and short observations. |
+| `case_note`, `case_add_fact` | Add an entity observation or a sourced relationship. |
+| `case_search`, `case_graph` | Retrieve case evidence and connections. |
 
 ### Domains, IPs, and websites
 
@@ -223,6 +252,7 @@ Never commit real keys. See the provider's own documentation for access requirem
 | `OSINT_HEADLESS` | `1` | Set `0` to show a browser window. |
 | `OSINT_SHOTS_DIR` | `./shots` | Screenshot output directory. |
 | `OSINT_KEYS_FILE` | `~/.config/osint-mcp/keys.json` | Alternate local key file. |
+| `OSINT_CASES_DB` | `~/.local/share/osint-mcp/cases.sqlite3` | Local case graph database. |
 
 Public sources can rate-limit, block, or return incomplete data. A DNS resolver mismatch is not automatically a misconfiguration. Breach results may be stale or contain false positives. Browser crawling and some composite tools make multiple requests, so set their limits to fit your scope. `image_analyze` processes images locally for hashes, EXIF, OCR, and QR; reverse-image search links are generated for remote URLs.
 
@@ -233,6 +263,7 @@ osint_mcp/
 ├── app.py              # MCP registration and tool instructions
 ├── common.py           # HTTP, cache, keys, and shared helpers
 ├── composite.py        # overview workflows
+├── case_tools.py       # private investigation graph
 ├── dns_tools.py        # DNS, CT, AXFR, subdomain enumeration
 ├── dns_audit_tools.py  # DNSSEC and resolver comparison
 ├── domain_tools.py     # RDAP, TLS, site policy files, archives
