@@ -9,6 +9,7 @@ import os
 import re
 import time
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -123,8 +124,10 @@ def ensure_url(target: str) -> str:
 
 
 def url_host(url: str) -> str:
-    match = re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://([^/:?#]+)", url)
-    return match.group(1) if match else ""
+    try:
+        return urlsplit(url).hostname or ""
+    except ValueError:
+        return ""
 
 
 def headers_dict(response: httpx.Response) -> dict[str, Any]:
