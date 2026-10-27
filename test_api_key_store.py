@@ -16,6 +16,14 @@ class APIKeyStoreTests(unittest.TestCase):
             with patch.object(common, "KEYS_PATH", str(path)):
                 self.assertIsNone(common.api_key("test_store_regression_key"))
 
+    def test_blank_environment_key_uses_stored_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "keys.json"
+            path.write_text('{"test_blank_key": "stored-value"}', encoding="utf-8")
+            with patch.object(common, "KEYS_PATH", str(path)):
+                with patch.dict("os.environ", {"TEST_BLANK_KEY_API_KEY": "   "}):
+                    self.assertEqual(common.api_key("test_blank_key"), "stored-value")
+
 
 if __name__ == "__main__":
     unittest.main()
