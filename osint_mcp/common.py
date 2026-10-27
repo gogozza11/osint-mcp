@@ -59,6 +59,8 @@ def api_key(*names: str) -> str | None:
             stored = json.load(fh)
     except Exception:  # noqa: BLE001
         return None
+    if not isinstance(stored, dict):
+        return None
     for name in names:
         value = stored.get(name.lower())
         if value:
